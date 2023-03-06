@@ -139,5 +139,15 @@ class aStar:
         return tracePath        
 
 if __name__=='__main__':
-    searchAlgo().mazePlot(10, 19, 6, 9)
+    print("\n Enter maze size: \n")
+    ipx = input("\n X: ")
+    x = int(ipx)
+    ipy = input("\n Y: ")
+    y = int(ipy)
+    print("\n Enter Target: \n")
+    tx = input("\n X: ")
+    tarx = int(tx)
+    ty = input("\n Y: ")
+    tary = int(ty)
+    searchAlgo().mazePlot(x, y, tarx, tary)
     
