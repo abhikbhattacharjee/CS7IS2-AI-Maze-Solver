@@ -8,6 +8,7 @@ Created on Sun Feb 19 08:46:22 2023
 
 from pyamaze import maze, agent, COLOR, textLabel
 from queue import PriorityQueue
+import time
 
 class mazeCreate:
     
@@ -23,6 +24,10 @@ class mazeCreate:
     def stepCount(self, mazeDef, name, algo):
         stepLabel = textLabel(mazeDef, f'{name} Steps: ', len(algo)+1)
         return stepLabel
+    
+    def algoTime(self, mazeDef, name, delta):
+        stepLabelT = textLabel(mazeDef, f'{name} Time: ', delta)
+        return stepLabelT
 
 class searchAlgo:
     
@@ -38,6 +43,7 @@ class searchAlgo:
     
     
     def aiAlgo(self, algo, maze, xtarget, ytarget):
+        start = time.time()
         startNode = (maze.rows, maze.cols)
         target = (xtarget, ytarget)
         cell = (xtarget, ytarget)
@@ -68,24 +74,30 @@ class searchAlgo:
         while cell != startNode:
             tracePath[algoPath[cell]] = cell
             cell = algoPath[cell]
-        return tracePath
+        end = time.time()
+        return tracePath, (end-start)
 
     def mazePlot(self, xshape, yshape, xtarget, ytarget):
-        mazeDef = mazeCreate().mazeData(xshape, yshape, xtarget, ytarget, 100)
+        mazeDef = mazeCreate().mazeData(xshape, yshape, xtarget, ytarget, 200)
         
         pathDFS = self.aiAlgo('DFS', mazeDef, xtarget, ytarget)
         pathBFS = self.aiAlgo('BFS', mazeDef, xtarget, ytarget)
         pathAStar = aStar().aStar(mazeDef, xtarget, ytarget)
         
-        agnt = mazeCreate().agntMake(mazeDef, 'square', COLOR.red)
+        agnt = mazeCreate().agntMake(mazeDef, 'arrow', COLOR.red)
         agnt2 = mazeCreate().agntMake(mazeDef, 'arrow', COLOR.yellow)
-        agnt3 = mazeCreate().agntMake(mazeDef, 'arrow', COLOR.green)
+        agnt3 = mazeCreate().agntMake(mazeDef, 'square', COLOR.blue)
         
-        mazeCreate().stepCount(mazeDef, 'DFS', pathDFS)
-        mazeCreate().stepCount(mazeDef, 'BFS', pathBFS)
-        mazeCreate().stepCount(mazeDef, 'A Star', pathAStar)
+        mazeCreate().stepCount(mazeDef, 'DFS', pathDFS[0])
+        mazeCreate().algoTime(mazeDef, 'DFS', pathDFS[1])
         
-        mazeDef.tracePath({agnt:pathDFS, agnt2:pathBFS, agnt3:pathAStar}, delay=400)
+        mazeCreate().stepCount(mazeDef, 'BFS', pathBFS[0])
+        mazeCreate().algoTime(mazeDef, 'BFS', pathBFS[1])
+        
+        mazeCreate().stepCount(mazeDef, 'A Star', pathAStar[0])
+        mazeCreate().algoTime(mazeDef, 'A Star', pathAStar[1])
+        
+        mazeDef.tracePath({agnt:pathDFS[0], agnt2:pathBFS[0], agnt3:pathAStar[0]}, delay=200)
         mazeDef.run()
 
 class aStar:
@@ -102,6 +114,7 @@ class aStar:
         return startNode, nodeDist, totalNodeCost 
 
     def aStar(self, maze, xtarget, ytarget):
+        start = time.time()
         startNode, nodeDist, totalNodeCost = self.aStarInit(maze, xtarget, ytarget)
         nodeDist[startNode] = 0
         totalNodeCost[startNode] = self.calNodeCost(startNode, (xtarget, ytarget))
@@ -136,7 +149,8 @@ class aStar:
         while cell != startNode:
             tracePath[algoPath[cell]] = cell
             cell = algoPath[cell]
-        return tracePath        
+        end = time.time()
+        return tracePath, (end-start)      
 
 if __name__=='__main__':
     print("\n Enter maze size: \n")
@@ -150,4 +164,3 @@ if __name__=='__main__':
     ty = input("\n Y: ")
     tary = int(ty)
     searchAlgo().mazePlot(x, y, tarx, tary)
-    
