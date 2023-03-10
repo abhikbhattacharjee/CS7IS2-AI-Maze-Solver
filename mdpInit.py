@@ -24,23 +24,36 @@ class mdpVI():
         self.algoPath = {}
         return self.REWARD, self.DISCOUNT, self.MAX_ERROR, self.ACTIONS, self.U, self.target, self.policy, self.tracePath, self.algoPath
 
-    def mdpVIActions(self, mazeDef):
+    def mdpVIActions(self, mazeDef, isStochastic = True):
+        self.stochastic = isStochastic
         for key, val in mazeDef.maze_map.items():
             self.ACTIONS[key] = [(k, v) for k, v in val.items() if v == 1]
 
         for k, v in self.ACTIONS.items():
             self.ACTIONS[k] = dict(v)
         
-        for key, val in self.ACTIONS.items():
-            for k, v in val.items():
-                if k == 'N':
-                    val[k] = 0.80
-                elif k == 'W':
-                    val[k] = 0.1
-                elif k == 'E':
-                    val[k] = 0.05
-                elif k == 'S':
-                    val[k] = 0.05
+        if self.stochastic:
+            for key, val in self.ACTIONS.items():
+                for k, v in val.items():
+                    if k == 'N':
+                        val[k] = 0.80
+                    elif k == 'W':
+                        val[k] = 0.1
+                    elif k == 'E':
+                        val[k] = 0.05
+                    elif k == 'S':
+                        val[k] = 0.05
+        else:
+            for key, val in self.ACTIONS.items():
+                for k, v in val.items():
+                    if k == 'N':
+                        val[k] = 1
+                    elif k == 'W':
+                        val[k] = 1
+                    elif k == 'E':
+                        val[k] = 1
+                    elif k == 'S':
+                        val[k] = 1
                 
         self.U = {state: 0 for state in self.ACTIONS.keys()}
         self.U[self.target[0]] = 1
@@ -57,9 +70,9 @@ class mdpVI():
         elif direction == 'S':
             return (currentNode[0]+1, currentNode[1])
     
-    def mdpValIter(self, xTarget, yTarget, reward, gamma, error, mazeDef):
+    def mdpValIter(self, xTarget, yTarget, reward, gamma, error, mazeDef, stochastic = True):
         REWARD, DISCOUNT, MAX_ERROR, ACTIONS, U, target, policy, tracePath, algoPath = self.mdpVIInit(xTarget, yTarget, reward, gamma, error)
-        ACTIONS, U = self.mdpVIActions(mazeDef)
+        ACTIONS, U = self.mdpVIActions(mazeDef, stochastic)
         while True:
             delta = 0
             for state in ACTIONS.keys():
@@ -74,7 +87,7 @@ class mdpVI():
                     utility = 0
                     reward = REWARD
                     if next_state == target[0]:
-                        reward = 1
+                        reward = 100000
                     utility += prob * (reward + DISCOUNT * U[next_state])
                     if utility > max_utility:
                         max_utility = utility
@@ -86,9 +99,9 @@ class mdpVI():
                 break
             return U, policy, ACTIONS
             
-    def mazeTrack(self, currNode, xTarget, yTarget, reward, gamma, error, mazeDef):
+    def mazeTrack(self, currNode, xTarget, yTarget, reward, gamma, error, mazeDef, stochastic = True):
         start = time.time()
-        U, policy, ACTIONS = self.mdpValIter(xTarget, yTarget, reward, gamma, error, mazeDef)
+        U, policy, ACTIONS = self.mdpValIter(xTarget, yTarget, reward, gamma, error, mazeDef, stochastic)
         node = currNode
         while True:
             bestNode = None
@@ -123,6 +136,7 @@ if __name__=='__main__':
     print(" 3. 50x50 Maze\n")
     print(" 4. 100x100 Maze\n")
     print(" 5. 25x50 Maze\n")
+    print(" 6. Custom Maze\n")
     menu1 = input("\n Enter Choice: ")
     choice = int(menu1)
     
@@ -176,6 +190,34 @@ if __name__=='__main__':
         mazeDef = maze(25,50)
         mazeDef.CreateMaze(loadMaze='./Maze/maze2550.csv')
         track, U, policy, actions, timediff = mdpVI().mazeTrack((25,50), 1, 1, -4, 0.8, 10**(-3), mazeDef)
+        print("\n TOTAL STEPS: ", len(track)+1)
+        print("\n TIME ELAPSED: ", timediff)
+        agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
+        mazeDef.tracePath({agent1: track}, delay=200)
+        mazeDef.run()
+    elif choice == 6:
+        print(" Selected Custom Maze\n")
+        print(" MDP Value Iteration Metrics\n Discount : 0.8\n Error : 0.001")
+        print("\n Enter maze size: \n")
+        ipx = input("\n X: ")
+        x = int(ipx)
+        ipy = input("\n Y: ")
+        y = int(ipy)
+        print("\n Enter Target: \n")
+        tx = input("\n X: ")
+        tarx = int(tx)
+        ty = input("\n Y: ")
+        tary = int(ty)
+        print("\n Stochastic? \n")
+        sx = input("\n (y/n) ")
+        sc = str(sx)
+        if sc == 'y':
+            stochastic = True
+        elif sc =='n':
+            stochastic = False
+        mazeDef = maze(x, y)
+        mazeDef.CreateMaze(tarx, tary, loopPercent=100, theme = COLOR.light)
+        track, U, policy, actions, timediff = mdpVI().mazeTrack((x,y), tarx, tary, -4, 0.8, 10**(-3), mazeDef, stochastic)
         print("\n TOTAL STEPS: ", len(track)+1)
         print("\n TIME ELAPSED: ", timediff)
         agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
