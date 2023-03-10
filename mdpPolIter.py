@@ -14,9 +14,13 @@ import time
 def mdpPolIter(x, y, tarx, tary, mazeDef):
     start = time.time()
     target = [(tarx, tary)]
-    
-    track, U, policy, actions, timediff = mdpVI().mazeTrack((x,y), tarx, tary, -40, 0.9, 10**(-3), mazeDef, stochastic = False)
-    
+    actions = {}
+    for key, val in mazeDef.maze_map.items():
+        actions[key] = [(k, v) for k, v in val.items() if v == 1]
+
+    for k, v in actions.items():
+        actions[k] = dict(v)
+
     U = {state: 0 for state in actions.keys()}
     U[target[0]] = 10**(8)
     policy = {s: random.choice('NSEW') for s in actions.keys()}
@@ -78,8 +82,11 @@ if __name__=='__main__':
     mazeDef = maze(x, y)
     mazeDef.CreateMaze(tarx, tary, loopPercent = 100, theme = COLOR.light)
     
-    path, U, policy, timeDiff = mdpPolIter(x, y, tarx, tary, mazeDef)
+    path, U1, policy1, timeDiff = mdpPolIter(x, y, tarx, tary, mazeDef)
+    track, U2, policy2, actions, timediff = mdpVI().mazeTrack((x,y), tarx, tary, -4, 0.8, 10**(-3), mazeDef, stochastic = False)
+    
     
     agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
-    mazeDef.tracePath({agent1: path}, delay = 200)
+    agent2 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.yellow)
+    mazeDef.tracePath({agent1: path, agent2:track}, delay = 200)
     mazeDef.run()
