@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 """
 Created on Wed Mar  8 18:43:54 2023
-
 @author: abhik_bhattacharjee
 """
 
 from pyamaze import maze, agent, COLOR, textLabel
 from queue import PriorityQueue
 import time
+import random
 GLOBAL_VISITED = []
 
 class mdpVI():
@@ -128,15 +128,72 @@ class mdpVI():
             node = bestNode
             end = time.time()
         return self.tracePath, U, policy, ACTIONS, (end-start)
+
+class mdpPI():
     
+    def mdpPolIter(self, x, y, tarx, tary, mazeDef):
+        start = time.time()
+        target = [(tarx, tary)]
+        actions = {}
+        for key, val in mazeDef.maze_map.items():
+            actions[key] = [(k, v) for k, v in val.items() if v == 1]
+
+        for k, v in actions.items():
+            actions[k] = dict(v)
+
+        U = {state: 0 for state in actions.keys()}
+        U[target[0]] = 10**(8)
+        policy = {s: random.choice('NSEW') for s in actions.keys()}
+        
+        REWARD = {state: -40 for state in actions.keys()}
+        REWARD[target[0]] = 10**(8)
+        DISCOUNT = 0.9
+        is_policy_changed = True
+        iterations = 0
+        
+        while is_policy_changed:
+            is_policy_changed = False
+            is_value_changed = True
+            while is_value_changed:
+                is_value_changed = False
+                for state in actions.keys():
+                    if state == target[0]:
+                        continue
+                    max_utility = float("-infinity")
+                    max_action = None
+                    for action, prob in actions[state].items():
+                        for direction in action:
+                            if mazeDef.maze_map[state][direction]==True:  
+                                next_state = mdpVI().mazeTrace(mazeDef, state, direction)
+                        reward = REWARD[state]
+                        if next_state == target[0]:
+                            reward = 10**(7)
+                        utility = reward + DISCOUNT*(prob*U[next_state])
+                        if utility > max_utility:
+                            max_utility = utility
+                            max_action = action
+                        policy[state] = max_action
+                        U[state] = max_utility
+                        if policy[state] != max_action:
+                            is_policy_changed = True
+                            policy[state] = max_action
+                    iterations += 1
+        currNode = (x,y)   
+        tracePath = {}
+        while currNode != target[0]:
+            test = mdpVI().mazeTrace(mazeDef, currNode, policy[currNode])
+            tracePath[currNode] = test
+            currNode = test
+        end = time.time()
+        return tracePath, U, policy, (end-start)    
+
 if __name__=='__main__':
     print("\n Please select Maze: \n")
     print(" 1. 5x5 Maze\n")
     print(" 2. 30x30 Maze\n")
     print(" 3. 50x50 Maze\n")
-    print(" 4. 100x100 Maze\n")
-    print(" 5. 25x50 Maze\n")
-    print(" 6. Custom Maze\n")
+    print(" 4. 25x50 Maze\n")
+    print(" 5. Custom Maze\n")
     menu1 = input("\n Enter Choice: ")
     choice = int(menu1)
     
@@ -146,10 +203,14 @@ if __name__=='__main__':
         mazeDef = maze(5,5)
         mazeDef.CreateMaze(loadMaze='./Maze/maze5.csv')
         track, U, policy, actions, timediff = mdpVI().mazeTrack((5,5), 1, 1, -4, 0.8, 10**(-3), mazeDef)
-        print("\n TOTAL STEPS: ", len(track)+1)
-        print("\n TIME ELAPSED: ", timediff)
+        path, U1, policy1, timeDiff = mdpPI().mdpPolIter(5, 5, 1, 1, mazeDef)
+        print("\n TOTAL STEPS MDP VI: ", len(track)+1)
+        print("\n TIME ELAPSED MDP VI: ", timediff)
+        print("\n TOTAL STEPS MDP PI: ", len(path)+1)
+        print("\n TIME ELAPSED MDP PI: ", timeDiff)
         agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
-        mazeDef.tracePath({agent1: track}, delay=200)
+        agent2 = agent(mazeDef, shape = 'square', footprints = True, color = COLOR.yellow)
+        mazeDef.tracePath({agent1: track, agent2: path}, delay=200)
         mazeDef.run()
     elif choice == 2:
         print(" Selected 30x30 Maze\n")
@@ -157,10 +218,14 @@ if __name__=='__main__':
         mazeDef = maze(30,30)
         mazeDef.CreateMaze(loadMaze='./Maze/maze30.csv')
         track, U, policy, actions, timediff = mdpVI().mazeTrack((30,30), 1, 1, -4, 0.8, 10**(-3), mazeDef)
-        print("\n TOTAL STEPS: ", len(track)+1)
-        print("\n TIME ELAPSED: ", timediff)
+        path, U1, policy1, timeDiff = mdpPI().mdpPolIter(30, 30, 1, 1, mazeDef)
+        print("\n TOTAL STEPS MDP VI: ", len(track)+1)
+        print("\n TIME ELAPSED MDP VI: ", timediff)
+        print("\n TOTAL STEPS MDP PI: ", len(path)+1)
+        print("\n TIME ELAPSED MDP PI: ", timeDiff)
         agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
-        mazeDef.tracePath({agent1: track}, delay=200)
+        agent2 = agent(mazeDef, shape = 'square', footprints = True, color = COLOR.yellow)
+        mazeDef.tracePath({agent1: track, agent2: path}, delay=200)
         mazeDef.run()
     elif choice == 3:
         print(" Selected 50x50 Maze\n")
@@ -168,34 +233,31 @@ if __name__=='__main__':
         mazeDef = maze(50,50)
         mazeDef.CreateMaze(loadMaze='./Maze/maze50.csv')
         track, U, policy, actions, timediff = mdpVI().mazeTrack((50,50), 1, 1, -4, 0.8, 10**(-3), mazeDef)
-        print("\n TOTAL STEPS: ", len(track)+1)
-        print("\n TIME ELAPSED: ", timediff)
+        path, U1, policy1, timeDiff = mdpPI().mdpPolIter(50, 50, 1, 1, mazeDef)
+        print("\n TOTAL STEPS MDP VI: ", len(track)+1)
+        print("\n TIME ELAPSED MDP VI: ", timediff)
+        print("\n TOTAL STEPS MDP PI: ", len(path)+1)
+        print("\n TIME ELAPSED MDP PI: ", timeDiff)
         agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
-        mazeDef.tracePath({agent1: track}, delay=200)
+        agent2 = agent(mazeDef, shape = 'square', footprints = True, color = COLOR.yellow)
+        mazeDef.tracePath({agent1: track, agent2: path}, delay=200)
         mazeDef.run()
     elif choice == 4:
-        print(" Selected 100x100 Maze\n")
-        print(" MDP Value Iteration Metrics\n Default Target : (1,1)\n Reward : 4\n Discount : 0.8\n Error : 0.001")
-        mazeDef = maze(100,100)
-        mazeDef.CreateMaze(loadMaze='./Maze/maze100.csv')
-        track, U, policy, actions, timediff = mdpVI().mazeTrack((100,100), 1, 1, -4, 0.8, 10**(-3), mazeDef)
-        print("\n TOTAL STEPS: ", len(track)+1)
-        print("\n TIME ELAPSED: ", timediff)
-        agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
-        mazeDef.tracePath({agent1: track}, delay=200)
-        mazeDef.run()
-    elif choice == 5:
         print(" Selected 25x50 Maze\n")
         print(" MDP Value Iteration Metrics\n Default Target : (1,1)\n Reward : 4\n Discount : 0.8\n Error : 0.001")
         mazeDef = maze(25,50)
         mazeDef.CreateMaze(loadMaze='./Maze/maze2550.csv')
         track, U, policy, actions, timediff = mdpVI().mazeTrack((25,50), 1, 1, -4, 0.8, 10**(-3), mazeDef)
-        print("\n TOTAL STEPS: ", len(track)+1)
-        print("\n TIME ELAPSED: ", timediff)
+        path, U1, policy1, timeDiff = mdpPI().mdpPolIter(25, 50, 1, 1, mazeDef)
+        print("\n TOTAL STEPS MDP VI: ", len(track)+1)
+        print("\n TIME ELAPSED MDP VI: ", timediff)
+        print("\n TOTAL STEPS MDP PI: ", len(path)+1)
+        print("\n TIME ELAPSED MDP PI: ", timeDiff)
         agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
-        mazeDef.tracePath({agent1: track}, delay=200)
+        agent2 = agent(mazeDef, shape = 'square', footprints = True, color = COLOR.yellow)
+        mazeDef.tracePath({agent1: track, agent2: path}, delay=200)
         mazeDef.run()
-    elif choice == 6:
+    elif choice == 5:
         print(" Selected Custom Maze\n")
         print(" MDP Value Iteration Metrics\n Discount : 0.8\n Error : 0.001")
         print("\n Enter maze size: \n")
@@ -218,13 +280,17 @@ if __name__=='__main__':
         mazeDef = maze(x, y)
         mazeDef.CreateMaze(tarx, tary, loopPercent=100, theme = COLOR.light)
         track, U, policy, actions, timediff = mdpVI().mazeTrack((x,y), tarx, tary, -4, 0.8, 10**(-3), mazeDef, stochastic)
-        print("\n TOTAL STEPS: ", len(track)+1)
-        print("\n TIME ELAPSED: ", timediff)
+        path, U1, policy1, timeDiff = mdpPI().mdpPolIter(x, y, tarx, tary, mazeDef)
+        print("\n TOTAL STEPS MDP VI: ", len(track)+1)
+        print("\n TIME ELAPSED MDP VI: ", timediff)
+        print("\n TOTAL STEPS MDP PI: ", len(path)+1)
+        print("\n TIME ELAPSED MDP PI: ", timeDiff)
         agent1 = agent(mazeDef, shape = 'arrow', footprints = True, color = COLOR.red)
-        mazeDef.tracePath({agent1: track}, delay=200)
+        agent2 = agent(mazeDef, shape = 'square', footprints = True, color = COLOR.yellow)
+        mazeDef.tracePath({agent1: track, agent2: path}, delay=200)
         mazeDef.run()
     else:
         print(" Wrong Option Selected! \n Exiting!\n")
         
-    print("\n Optimal Policy Stored in variable 'policy'\n")
-    
+    print("\n Optimal Policy for Policy Iteration Stored in variable 'policy1'\n")
+    print("\n Optimal Values for states in Value Iteration Stored in variable 'U'\n")
