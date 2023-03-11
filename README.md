@@ -96,7 +96,7 @@ A sample end result of a solved 30x30 maze is given below:
 
 
 ## References
-- Stuart Russell and Peter Norvig. Artificial Intelligence: A Modern Approach (3rd ed.).
+- Stuart Russell and Peter Norvig. Artificial Intelligence: A Modern Approach (3rd ed.)
 - [aima-code](https://github.com/aimacode/aima-python): Implementation of algorithms from Russell And Norvig's "Artificial Intelligence - A Modern Approach"
 - [Pyamaze](https://github.com/MAN1986/pyamaze)
 - [MDP_VI_PI_Q-learning_AIMA.ipynb](https://github.com/tirthajyoti/RL_basics/blob/master/MDP_VI_PI_Q-learning_AIMA.ipynb) by [Tirthajyoti Sarkar](https://github.com/tirthajyoti)
