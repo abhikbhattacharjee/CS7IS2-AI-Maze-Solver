@@ -96,6 +96,9 @@ cd OutTakes
 python mdpInit.py
 ```
 
+## Please Note
+If in case the MDP algorithms fail to converge, please increase the rewards in the script
+
 A sample end result of a solved 30x30 maze is given below:
 - Legend  
   - Blue Arrow: A-Star Algorithm
