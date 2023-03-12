@@ -89,7 +89,7 @@ class mdpVI():
                     reward = REWARD
                     if next_state == target[0]:
                         reward = 100000
-                    utility += prob * (reward + DISCOUNT * U[next_state])
+                    utility = reward + DISCOUNT*(prob*U[next_state])
                     if utility > max_utility:
                         max_utility = utility
                         max_action = action
